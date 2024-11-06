@@ -19,7 +19,7 @@ exports.createPaymentIntent = async (req, res) => {
             name,
             email,
             amount,
-            status: 'pending',
+            status: 'paid',
             paymentIntentId: paymentIntent.id,
         });
         await payment.save();

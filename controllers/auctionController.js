@@ -1,43 +1,35 @@
-// controllers/auctionController.js
 const Auction = require('../models/Auction');
 
-// const createAuction = async (req, res) => {
-//     try {
-//         const { tournamentName, tournamentDate, numTeams, totalPoints } = req.body;
-//         const imagePath = req.file ? req.file.path : '';
-
-//         const newAuction = new Auction({
-//             tournamentName,
-//             tournamentDate,
-//             numTeams,
-//             totalPoints,
-//             image: imagePath, // Save file path in the database
-//         });
-
-//         await newAuction.save();
-//         res.status(201).json({ message: 'Auction created successfully', auction: newAuction });
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).json({ error: 'Failed to create auction' });
-//     }
-// };
-
-const createAuction = async (req, res) => {
-  try {
-    const { title, description } = req.body;
-    const newAuction = new Auction({
-      title,
-      description,
-      image: req.file ? req.file.path : null, // If you are uploading an image
-    });
-    await newAuction.save();
-    res.status(201).json(newAuction);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to create auction' });
-  }
+// Fetch all auctions
+const getAuctions = async (req, res) => {
+    try {
+        const auctions = await Auction.find();
+        res.status(200).json(auctions);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching auctions', error });
+    }
 };
 
-module.exports = { createAuction };
+// Create a new auction
+const createAuction = async (req, res) => {
+    try {
+        const { leaderEmail, tournamentName, tournamentDate, teamsCount, totalPointsPerTeam, players } = req.body;
 
+        const newAuction = new Auction({
+            leaderEmail,
+            tournamentName,
+            tournamentDate,
+            teamsCount,
+            totalPointsPerTeam,
+            players,
+            image: req.file ? req.file.path : null, // Optional image upload handling
+        });
 
-module.exports = { createAuction };
+        await newAuction.save();
+        res.status(201).json(newAuction);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to create auction' });
+    }
+};
+
+module.exports = { getAuctions, createAuction };

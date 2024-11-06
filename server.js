@@ -1,17 +1,18 @@
-// backend/server.js
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
-const cors = require('cors'); // Import the cors package
-
+const cors = require('cors');
 const bodyParser = require('body-parser');
+
 const authRoutes = require('./routes/authRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const auctionRoutes = require('./routes/auctionRoutes');
-const app = express();
-app.use(cors()); // Add this line to enable CORS
 
+const app = express();
+
+// Middleware
+app.use(cors());
 app.use(bodyParser.json());
 
 // Database connection
@@ -20,8 +21,8 @@ mongoose.connect(process.env.MONGO_URI, {
     useUnifiedTopology: true,
 })
 .then(() => console.log('Database connected'))
-.catch(err => {console.error('MongoDB connection error:',err);
-});
+.catch(err => console.error('MongoDB connection error:', err));
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/payment', paymentRoutes);
