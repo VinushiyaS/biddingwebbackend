@@ -8,6 +8,9 @@ const authRoutes = require('./routes/authRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const auctionRoutes = require('./routes/auctionRoutes');
+const contactRoutes = require('./routes/contactRoutes');
+const leaderRequestRoutes = require('./routes/leaderRequestRoutes');
+
 
 const app = express();
 
@@ -28,6 +31,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/auctions', auctionRoutes);
+app.use('/api', contactRoutes);
+
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
