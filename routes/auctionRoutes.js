@@ -1,22 +1,17 @@
 const express = require('express');
 const router = express.Router();
-const upload = require('../middleware/uploadConfig'); // Assuming you have a middleware for file uploads
-const { getAuctions, createAuction } = require('../controllers/auctionController');
+const auctionController = require('../controllers/auctionController');
 
-// Route for creating a new auction (with optional image upload)
-router.post('/create-auction', upload.single('image'), createAuction);
+// Route to create a new auction
+router.post('/', auctionController.createAuction);
 
-// Route to fetch auctions by leader ID
-router.get('/leader/:leaderEmail', async (req, res) => {
-    const leaderEmail = req.params.leaderEmail;
-    try {
-        const auctions = await Auction.find({ leaderEmail });
-        res.status(200).json(auctions);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching auctions for the leader', error });
-    }
-});
+// Route to add a player to an auction
+router.post('/auction/:id/player', auctionController.addPlayer);
 
-router.get('/', getAuctions); // Route to fetch all auctions
+// Route to get auction details
+router.get('/auction/:id', auctionController.getAuctionDetails);
+
+// Route to get the highest bid player in an auction
+router.get('/auction/highest/:id', auctionController.getHighestBidPlayer);
 
 module.exports = router;

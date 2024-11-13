@@ -9,7 +9,6 @@ const paymentRoutes = require('./routes/paymentRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const auctionRoutes = require('./routes/auctionRoutes');
 const contactRoutes = require('./routes/contactRoutes');
-const leaderRequestRoutes = require('./routes/leaderRequestRoutes');
 
 
 const app = express();
