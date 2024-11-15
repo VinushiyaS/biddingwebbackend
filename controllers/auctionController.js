@@ -1,151 +1,174 @@
-// controllers/auctionController.js
 const Auction = require('../models/Auction');
 const Player = require('../models/Player');
 
 // Create a new auction
 exports.createAuction = async (req, res) => {
   try {
-    const { leaderEmail, tournamentName, teams, bidPointsPerTeam } = req.body;
-    const newAuction = new Auction({ leaderEmail, tournamentName, teams, bidPointsPerTeam });
+    const { leaderEmail, tournamentName, bidPointsPerTeam, teams } = req.body;
+
+    const newAuction = new Auction({
+      leaderEmail,
+      tournamentName,
+      bidPointsPerTeam,
+      teams,
+    });
+
     await newAuction.save();
-    res.status(201).json(newAuction);
+    res.status(201).json({
+      success: true,
+      message: 'Auction created successfully!',
+      auction: newAuction,
+    });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error('Error creating auction:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create auction',
+    });
   }
 };
 
-// Add a player to an auction
-exports.addPlayer = async (req, res) => {
+// Get all auctions
+exports.getAllAuctions = async (req, res) => {
   try {
-    const id = req.params.id; // Retrieve auctionId from URL parameters (this is the ObjectId of the auction)
-    const { name, photo, bidAmount, team, done } = req.body;
-
-    // Create a new Player document and link it to the auction by using auctionId (ObjectId)
-    const newPlayer = new Player({ name, photo, bidAmount, team, done, id });
-    await newPlayer.save();
-
-    // Update remaining bid points for the team if player is marked as done
-    if (done) {
-      // Find the auction by its ObjectId
-      const auction = await Auction.findById(id); // Use auctionId as the ObjectId
-      if (!auction) {
-        return res.status(404).json({ message: 'Auction not found' });
-      }
-
-      const selectedTeam = auction.teams.find((t) => t.name === newPlayer.team);
-      if (selectedTeam && selectedTeam.remainingBidPoints >= newPlayer.bidAmount) {
-        selectedTeam.remainingBidPoints -= newPlayer.bidAmount;
-        await auction.save();
-      } else {
-        return res.status(400).json({ message: 'Insufficient points for this team.' });
-      }
-    }
-
-    // Add player reference to the auction's players array
-    const auction = await Auction.findById(id); // Again, use auctionId to find the auction
-    auction.players.push(newPlayer); // Add player to the auction's players array
-    await auction.save();
-
-    res.status(201).json(newPlayer); // Respond with the new player
+    const auctions = await Auction.find().populate('players');
+    res.status(200).json({
+      success: true,
+      auctions,
+    });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error('Error fetching auctions:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch auctions',
+    });
   }
 };
 
-
-// Get auction details along with players
-// exports.getAuctionDetails = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const auction = await Auction.findById(id).populate('players');  // Populate the players
-//     if (!auction) {
-//       return res.status(404).json({ message: 'Auction not found' });
-//     }
-//     res.status(200).json(auction);
-//   } catch (error) {
-//     res.status(400).json({ message: error.message });
-//   }
-// };
-
-const mongoose = require('mongoose');
-
+// Get details of a specific auction
 exports.getAuctionDetails = async (req, res) => {
   try {
-    const { id } = req.params;
+    const auction = await Auction.findById(req.params.id).populate('players');
 
-    // Validate if the id is a valid ObjectId
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: 'Invalid auction ID format' });
-    }
-
-    // Find the auction by ObjectId
-    const auction = await Auction.findById(id).populate('players');  // Populate the players
-
-    // If auction not found, return 404
     if (!auction) {
-      return res.status(404).json({ message: 'Auction not found' });
+      return res.status(404).json({
+        success: false,
+        message: 'Auction not found',
+      });
     }
 
-    // Return auction details
-    res.status(200).json(auction);
+    res.status(200).json({
+      success: true,
+      auction,
+    });
   } catch (error) {
-    // Log the error for debugging
     console.error('Error fetching auction details:', error);
-
-    // Respond with the error message
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch auction details',
+    });
   }
 };
 
-
-
-
-// // Get the player with the highest bid in an auction
-// exports.getHighestBidPlayer = async (req, res) => {
-//   try {
-//     const {id} = req.params;
-//     const highestBidPlayer = await Player.find({ id })
-//       .sort({ bidAmount: -1 })
-//       .limit(1);
-//     res.status(200).json(highestBidPlayer[0]);
-//   } catch (error) {
-//     res.status(400).json({ message: error.message });
-//   }
-// };
-
-// Get the player with the highest bid in an auction
-// Get the player with the highest bid in an auction
-
-// Get the player with the highest bid in an auction
-
-exports.getHighestBidPlayer = async (req, res) => {
+// Add players to an auction
+exports.addPlayersToAuction = async (req, res) => {
   try {
-    const { id } = req.params; // auctionId from the URL
+    const auction = await Auction.findById(req.params.id);
 
-    // Ensure the id is a valid ObjectId before querying
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: 'Invalid auction ID format' });
+    if (!auction) {
+      return res.status(404).json({
+        success: false,
+        message: 'Auction not found',
+      });
     }
 
-    // Convert the auctionId to ObjectId
-    const auctionObjectId = new mongoose.Types.ObjectId(id);
+    // Assuming players are sent in the body as an array of player IDs
+    const { playerIds } = req.body;
 
-    // Find players whose auctionId matches the given auction ID and sort by bidAmount in descending order
-    const highestBidPlayer = await Player.find({ auctionId: auctionObjectId })
-      .sort({ bidAmount: -1 }) // Sort by bidAmount in descending order
-      .limit(1); // Only retrieve the player with the highest bid
+    // Fetch players by IDs and add them to the auction
+    const players = await Player.find({ '_id': { $in: playerIds } });
 
-    // Check if any players exist in this auction
-    if (highestBidPlayer.length === 0) {
-      return res.status(404).json({ message: 'No players found in this auction' });
-    }
+    // Add players to the auction
+    auction.players.push(...players);
 
-    // Return the player with the highest bid
-    res.status(200).json(highestBidPlayer[0]);
+    await auction.save();
+    res.status(200).json({
+      success: true,
+      message: 'Players added to the auction successfully!',
+      auction,
+    });
   } catch (error) {
-    // General error handling
-    console.error(error); // Log the error for debugging purposes
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('Error adding players to auction:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to add players to auction',
+    });
   }
 };
 
+// Get players in a specific auction
+exports.getAuctionPlayers = async (req, res) => {
+  try {
+    const auction = await Auction.findById(req.params.id).populate('players');
+
+    if (!auction) {
+      return res.status(404).json({
+        success: false,
+        message: 'Auction not found',
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      players: auction.players,
+    });
+  } catch (error) {
+    console.error('Error fetching players for auction:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch players for auction',
+    });
+  }
+};
+
+// Update bid points for a team in the auction
+exports.updateBidPoints = async (req, res) => {
+  try {
+    const { teamName, bidPoints } = req.body;
+
+    const auction = await Auction.findById(req.params.id);
+
+    if (!auction) {
+      return res.status(404).json({
+        success: false,
+        message: 'Auction not found',
+      });
+    }
+
+    // Find the team and update the bid points
+    const team = auction.teams.find((team) => team.name === teamName);
+
+    if (!team) {
+      return res.status(404).json({
+        success: false,
+        message: 'Team not found',
+      });
+    }
+
+    team.bidPoints = bidPoints;
+    team.remainingBidPoints = bidPoints; // Reset remaining bid points to the updated bid points value
+
+    await auction.save();
+    res.status(200).json({
+      success: true,
+      message: 'Bid points updated successfully',
+      auction,
+    });
+  } catch (error) {
+    console.error('Error updating bid points:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update bid points',
+    });
+  }
+};

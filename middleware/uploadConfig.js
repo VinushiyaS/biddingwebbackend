@@ -1,34 +1,39 @@
-// middleware/uploadConfig.js
+const express = require('express');
 const multer = require('multer');
 const path = require('path');
+const Auction = require('../models/Auction');  // Path to your Auction model
 
-// Set up storage engine
+const router = express.Router();
+
+// Set up multer for file storage
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'uploads'); // directory where files will be saved
-    },
-    filename: (req, file, cb) => {
-        cb(null, `${Date.now()}-${file.originalname}`);
-    },
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');  // Path to save uploaded files
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname));  // Unique filename
+  }
 });
 
-// File filter to allow only images
-const fileFilter = (req, file, cb) => {
-    const fileTypes = /jpeg|jpg|png|gif/;
-    const extname = fileTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = fileTypes.test(file.mimetype);
-    if (mimetype && extname) {
-        return cb(null, true);
-    } else {
-        cb('Error: Images Only!');
+const upload = multer({ storage: storage });
+
+// Endpoint to upload an image
+router.post('/upload-image/:ObjectId', upload.single('image'), async (req, res) => {
+  try {
+    const auction = await Auction.findById(req.params.ObjectId);
+
+    if (!auction) {
+      return res.status(404).json({ message: 'Auction not found' });
     }
-};
 
-// Initialize multer with defined storage and file filter
-const upload = multer({
-    storage: storage,
-    limits: { fileSize: 1024 * 1024 * 5 }, // Limit file size to 5MB
-    fileFilter: fileFilter,
+    // Store the image URL in the auction document
+    auction.image = `/uploads/${req.file.filename}`;
+    await auction.save();
+
+    res.status(200).json({ message: 'Image uploaded successfully', imageUrl: auction.image });
+  } catch (err) {
+    res.status(500).json({ message: 'Error uploading image', error: err });
+  }
 });
 
-module.exports = upload;
+module.exports = router;

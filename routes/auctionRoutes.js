@@ -3,15 +3,21 @@ const router = express.Router();
 const auctionController = require('../controllers/auctionController');
 
 // Route to create a new auction
-router.post('/', auctionController.createAuction);
+router.post('/create', auctionController.createAuction);
 
-// Route to add a player to an auction
-router.post('/auction/:id/player', auctionController.addPlayer);
+// Route to get all auctions
+router.get('/', auctionController.getAllAuctions);
 
-// Route to get auction details
-router.get('/auction/:id', auctionController.getAuctionDetails);
+// Route to get details of a specific auction
+router.get('/:id', auctionController.getAuctionDetails);
 
-// Route to get the highest bid player in an auction
-router.get('/auction/highest/:id', auctionController.getHighestBidPlayer);
+// Route to add players to an auction
+router.post('/:id/add-players', auctionController.addPlayersToAuction);
+
+// Route to get players in an auction
+router.get('/:id/players', auctionController.getAuctionPlayers);
+
+// Route to update team bid points in an auction
+router.patch('/:id/update-bidpoints', auctionController.updateBidPoints);
 
 module.exports = router;

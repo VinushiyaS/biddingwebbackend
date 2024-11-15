@@ -1,4 +1,3 @@
-// models/Auction.js
 const mongoose = require('mongoose');
 
 // Auction Schema
@@ -20,6 +19,10 @@ const auctionSchema = new mongoose.Schema({
       bidPoints: {
         type: Number,
         required: true
+      }, 
+      image: {
+        type: String,  // URL of the image
+        required: false  // Optional, as the image may not always be provided
       },
       remainingBidPoints: {
         type: Number,
@@ -34,7 +37,8 @@ const auctionSchema = new mongoose.Schema({
   players: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Player'  // reference the Player model
-  }]
+  }],
+ 
 });
 
 // Create the Auction model
