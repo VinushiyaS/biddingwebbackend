@@ -31,7 +31,7 @@ exports.createAuction = async (req, res) => {
 // Get all auctions
 exports.getAllAuctions = async (req, res) => {
   try {
-    const auctions = await auctionId.find().populate('players');
+    const auctions = await Auction.find().populate('players');
     res.status(200).json({
       success: true,
       auctions,
@@ -69,6 +69,7 @@ exports.getAuctionDetails = async (req, res) => {
     });
   }
 };
+
 // Add players to an auction
 exports.addPlayersToAuction = async (req, res) => {
   try {
@@ -81,21 +82,24 @@ exports.addPlayersToAuction = async (req, res) => {
       });
     }
 
-    const { players } = req.body; // Assuming players are sent as an array of player objects
+    // Assuming players are sent in the body as an array of player IDs
+    const { playerIds } = req.body;
 
-    // Iterate over the players array, save each player, and push their ID to the auction
-   
-      // Assuming Player is a separate Mongoose model for player data
-      const Player = require('../models/Player');
-      const newPlayer = new Player(players); // Create a new player document
-      console.log (newPlayer)
-      const savedPlayer = await newPlayer.save(); // Save the player document to the database
-    
-    // Add the player IDs to the auction's players array
-    auction.players.push(savedPlayer);
+    // Check if player IDs are valid and exist
+    const players = await Player.find({ '_id': { $in: playerIds } });
 
-    await auction.save(); // Save the updated auction
+    // Ensure players exist before adding
+    if (players.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'No valid players found for the provided IDs',
+      });
+    }
 
+    // Add only the player IDs to the auction
+    auction.players.push(...players.map(player => player._id));
+
+    await auction.save();
     res.status(200).json({
       success: true,
       message: 'Players added to the auction successfully!',
@@ -106,7 +110,6 @@ exports.addPlayersToAuction = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to add players to auction',
-      error: error.message,
     });
   }
 };
